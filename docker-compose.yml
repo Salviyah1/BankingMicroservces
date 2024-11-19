@@ -7,11 +7,9 @@ services:
 
     image: banking-microservice:1.0 
 
-    build: . 
-
     ports: 
 
-      - "8080:8080"  # Map port 8080 of the container to port 8080 on the host 
+      - "8000:8080"  # Map port 8080 of the container to port 8080 on the host 
 
     networks: 
 
@@ -19,7 +17,7 @@ services:
 
     volumes: 
 
-      - ./target/BankingMicroservice-1.0-SNAPSHOT.jar:/app/app.jar  # Mount the JAR file into the container 
+      - ./target/target/mvn-hello-world.war /usr/local/tomcat/webapps/  # Mount the JAR file into the container 
 
  
 
