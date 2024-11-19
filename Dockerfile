@@ -7,7 +7,7 @@ WORKDIR /app
 # Copy the application JAR file
 #COPY /app.jar /app/app.jar
 #COPY target/BankingMicroservice-1.0-SNAPSHOT.jar /app/app.jar
-COPY target/BankingMicroservice-1.0-SNAPSHOT.war /usr/local/tomcat/webapps/ROOT.war
+COPY target/mvn-hello-world.war /usr/local/tomcat/webapps/
 
 
 # Expose port 8080 for the application
