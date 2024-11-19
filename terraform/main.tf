@@ -3,8 +3,8 @@ provider "azurerm" {
   subscription_id = "b0cbe257-847d-420e-be84-210c9508c997"
 }
 # Resource Group
-resource "azurerm_resource_group" "rg" {
-  name     = "rg-S2"
+resource "azurerm_resource_group" "rg1" {
+  name     = "rg1-S2"
   location = "Canada Central"
 }
  
@@ -12,14 +12,14 @@ resource "azurerm_resource_group" "rg" {
 resource "azurerm_virtual_network" "vnet" {
   name                = "vnet-S2"
   address_space       = ["192.168.0.0/19"]
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg1.location
+  resource_group_name = azurerm_resource_group.rg1.name
 }
  
 # Subnet
 resource "azurerm_subnet" "subnet" {
   name                 = "subnet-S2"
-  resource_group_name  = azurerm_resource_group.rg.name
+  resource_group_name  = azurerm_resource_group.rg1.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["192.168.0.0/24"]
 }
@@ -27,73 +27,45 @@ resource "azurerm_subnet" "subnet" {
 # Network Security Group
 resource "azurerm_network_security_group" "nsg" {
   name                = "nsg-S2"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg1.location
+  resource_group_name = azurerm_resource_group.rg1.name
 }
  
-# Public IP
-resource "azurerm_public_ip" "public_ip" {
-  name                = "public-ip-linux-vm"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Dynamic"  # You can use "Static" for a fixed IP
-  sku                 = "Basic"    # Use "Standard" for better features and availability
- 
-  tags = {
-    environment = "dev"
-  }
+# Public IP Address
+resource "azurerm_public_ip" "vm_public_ip" {
+  name                = "vm-public-ip"
+  location            = azurerm_resource_group.rg1.location
+  resource_group_name = azurerm_resource_group.rg1.name
+  allocation_method   = "Static"  # Changed to Static as required by Standard SKU
+  sku                  = "Standard"  # Specifying the Standard SKU for public IP
+  domain_name_label   = "myvm-public-ip"  # Optional: This will create a DNS name for the public IP
 }
+ 
  
 # Network Interface for Linux VM
 resource "azurerm_network_interface" "nic_linux" {
   name                = "nic-linux-vm"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg1.location
+  resource_group_name = azurerm_resource_group.rg1.name
  
-  # Network interface configuration
   ip_configuration {
     name                          = "ipconfig-linux"
     subnet_id                     = azurerm_subnet.subnet.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.public_ip.id  # Associate public IP
+    public_ip_address_id          = azurerm_public_ip.vm_public_ip.id  # Associate Public IP
   }
-}
- 
-# User Data Script (Base64 Encoded)
-data "template_file" "user_data_script" {
-  template = <<-EOT
-    #!/bin/bash
-    sudo dnf -y update
- 
-    # Install Docker
-    sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-    sudo dnf install -y docker-ce docker-ce-cli containerd.io
-    sudo systemctl enable --now docker
-    sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-    sudo dnf install -y docker-compose-plugin
-    docker compose version
- 
-    # Install Java 11 (OpenJDK)
-    sudo dnf install -y java-11-openjdk-devel
-    java -version
- 
-    # Install Maven
-    sudo dnf install -y maven
-    mvn -version
-  EOT
 }
  
 # Linux Virtual Machine
 resource "azurerm_linux_virtual_machine" "linux_vm" {
   name                            = "linux-vm"
-  resource_group_name             = azurerm_resource_group.rg.name
-  location                        = azurerm_resource_group.rg.location
+  resource_group_name             = azurerm_resource_group.rg1.name
+  location                        = azurerm_resource_group.rg1.location
   size                            = "Standard_DS1_v2"
   admin_username                  = "adminuser"
-  admin_password                  = "Password@123"  # Replace with secure credentials
+  admin_password                  = "Password@123" # Replace with secure credentials
   disable_password_authentication = false
  
-  # Network interface for the VM
   network_interface_ids = [azurerm_network_interface.nic_linux.id]
  
   os_disk {
@@ -114,12 +86,12 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     product   = "rocky-linux-9"
   }
  
-  # User Data (Base64 Encoded)
-  custom_data = base64encode(data.template_file.user_data_script.rendered)
- 
-  # Define SSH public key for authentication
-  admin_ssh_key {
-    username   = "adminuser"
-    public_key = file("~/.ssh/id_rsa.pub")  # Provide your SSH public key file path here
-  }
+  custom_data = base64encode(file("user-data.sh"))
 }
+ 
+# Output Public IP Address
+output "vm_public_ip" {
+  value = azurerm_public_ip.vm_public_ip.ip_address
+}
+ 
+has context menu
