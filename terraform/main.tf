@@ -74,4 +74,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     publisher = "solvedevops1643693563360"
     product   = "rocky-linux-9"
   }
+ 
+  custom_data = base64encode(file("user-data.sh"))
 }
+ 
