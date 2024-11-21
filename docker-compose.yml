@@ -4,9 +4,9 @@ version: '3.8'
 services: 
 
   banking-microservice: 
-
+   
     image: banking-microservice:1.0 
-
+    build : .
     ports: 
 
       - "8000:8080"  # Map port 8080 of the container to port 8080 on the host 
