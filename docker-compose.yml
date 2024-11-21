@@ -17,8 +17,7 @@ services:
 
     volumes: 
 
-      - ./target/mvn-hello-world.war /usr/local/tomcat/webapps  # Mount the JAR file into the container 
-
+      - ./target/mvn-hello-world.war:/usr/local/tomcat/webapps/mvn-hello-world.war
  
 
 networks: 
